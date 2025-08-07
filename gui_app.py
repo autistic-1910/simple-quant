@@ -113,12 +113,15 @@ class QuantAnalysisGUI:
             self.results_text.insert(tk.END, "\n\n")
             
             # Portfolio analysis
-            portfolio_metrics = self.quant.portfolio_analysis()
-            self.results_text.insert(tk.END, "=== Portfolio Analysis (Equal Weights) ===\n")
-            for key, value in portfolio_metrics.items():
-                if key != 'Portfolio Returns':
-                    self.results_text.insert(tk.END, f"{key}: {value:.4f}\n")
-            self.results_text.insert(tk.END, "\n")
+            portfolio_result = self.quant.portfolio_analysis()
+            if portfolio_result is not None:
+                portfolio_metrics, portfolio_returns = portfolio_result
+                if portfolio_metrics:
+                    self.results_text.insert(tk.END, "=== Portfolio Analysis (Equal Weights) ===\n")
+                    for key, value in portfolio_metrics.items():
+                        if key != 'Portfolio Returns':
+                            self.results_text.insert(tk.END, f"{key}: {value:.4f}\n")
+                    self.results_text.insert(tk.END, "\n")
             
         except Exception as e:
             messagebox.showerror("Error", f"Error calculating metrics: {str(e)}")
@@ -135,6 +138,9 @@ class QuantAnalysisGUI:
             self.results_text.insert(tk.END, correlation_matrix.to_string())
             self.results_text.insert(tk.END, "\n\n")
             
+            # Plot correlation heatmap
+            self.quant.plot_correlation_heatmap()
+            
         except Exception as e:
             messagebox.showerror("Error", f"Error showing correlation: {str(e)}")
     
@@ -145,7 +151,7 @@ class QuantAnalysisGUI:
                 return
             
             ticker = self.quant.returns.columns[0]
-            mc_results = self.quant.monte_carlo_simulation(days=252, simulations=1000, ticker=ticker)
+            mc_results = self.quant.monte_carlo_simulation(num_simulations=1000, time_horizon=252)
             self.quant.plot_monte_carlo(mc_results, ticker)
             
             self.results_text.insert(tk.END, f"Monte Carlo simulation completed for {ticker}\n")

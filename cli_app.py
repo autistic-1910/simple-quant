@@ -44,14 +44,16 @@ def main():
     
     if args.analysis in ['portfolio', 'all']:
         print("\n=== Portfolio Analysis ===")
-        portfolio_metrics = quant.portfolio_analysis()
-        for key, value in portfolio_metrics.items():
-            if key != 'Portfolio Returns':
-                print(f"{key}: {value:.4f}")
+        portfolio_result = quant.portfolio_analysis()
+        if portfolio_result is not None:
+            portfolio_metrics, portfolio_returns = portfolio_result
+            if portfolio_metrics:
+                for key, value in portfolio_metrics.items():
+                    print(f"{key}: {value:.4f}")
     
     if args.analysis in ['montecarlo', 'all']:
         print("\n=== Monte Carlo Simulation ===")
-        mc_results = quant.monte_carlo_simulation(ticker=tickers[0])
+        mc_results = quant.monte_carlo_simulation()
         quant.plot_monte_carlo(mc_results, tickers[0])
     
     if args.analysis == 'all':

@@ -38,23 +38,30 @@ class QuantAnalysisApp:
         
         if args.analysis in ['portfolio', 'all']:
             print("\n=== Portfolio Analysis ===")
-            portfolio_metrics = self.quant.portfolio_analysis()
-            for key, value in portfolio_metrics.items():
-                if key != 'Portfolio Returns':
-                    print(f"{key}: {value:.4f}")
+            portfolio_result = self.quant.portfolio_analysis()
+            if portfolio_result is not None:
+                portfolio_metrics, portfolio_returns = portfolio_result
+                if portfolio_metrics:
+                    for key, value in portfolio_metrics.items():
+                        print(f"{key}: {value:.4f}")
         
         if args.analysis in ['montecarlo', 'all']:
             print("\n=== Monte Carlo Simulation ===")
             if args.all_stocks:
                 mc_results_all = self.quant.monte_carlo_all_stocks(days=args.days, simulations=args.simulations)
             else:
-                mc_results = self.quant.monte_carlo_simulation(days=args.days, simulations=args.simulations, ticker=tickers[0])
+                mc_results = self.quant.monte_carlo_simulation(num_simulations=args.simulations, time_horizon=args.days)
                 self.quant.plot_monte_carlo(mc_results, tickers[0])
         
-        if args.analysis == 'all':
+        if args.analysis in ['correlation', 'all']:
             print("\n=== Correlation Analysis ===")
             correlation = self.quant.correlation_analysis()
-            
+            if correlation is not None:
+                print(correlation.round(4))
+                # Plot correlation heatmap
+                self.quant.plot_correlation_heatmap()
+        
+        if args.analysis == 'all':
             if len(tickers) > 1:
                 print("\n=== Efficient Frontier ===")
                 ef_results = self.quant.efficient_frontier()
@@ -237,12 +244,15 @@ class QuantAnalysisGUI:
             self.results_text.insert(tk.END, "\n\n")
             
             # Portfolio analysis
-            portfolio_metrics = self.quant.portfolio_analysis()
-            self.results_text.insert(tk.END, "=== Portfolio Analysis (Equal Weights) ===\n")
-            for key, value in portfolio_metrics.items():
-                if key != 'Portfolio Returns':
-                    self.results_text.insert(tk.END, f"{key}: {value:.4f}\n")
-            self.results_text.insert(tk.END, "\n")
+            portfolio_result = self.quant.portfolio_analysis()
+            if portfolio_result is not None:
+                portfolio_metrics, portfolio_returns = portfolio_result
+                if portfolio_metrics:
+                    self.results_text.insert(tk.END, "=== Portfolio Analysis (Equal Weights) ===\n")
+                    for key, value in portfolio_metrics.items():
+                        if key != 'Portfolio Returns':
+                            self.results_text.insert(tk.END, f"{key}: {value:.4f}\n")
+                    self.results_text.insert(tk.END, "\n")
             self.update_status("Metrics calculated")
             
         except Exception as e:
@@ -261,6 +271,10 @@ class QuantAnalysisGUI:
             self.results_text.insert(tk.END, "=== Correlation Matrix ===\n")
             self.results_text.insert(tk.END, correlation_matrix.to_string())
             self.results_text.insert(tk.END, "\n\n")
+            
+            # Plot correlation heatmap
+            self.quant.plot_correlation_heatmap()
+            
             self.update_status("Correlation analysis complete")
             
         except Exception as e:
@@ -278,7 +292,7 @@ class QuantAnalysisGUI:
             days = int(self.days_var.get())
             simulations = int(self.simulations_var.get())
             
-            mc_results = self.quant.monte_carlo_simulation(days=days, simulations=simulations, ticker=ticker)
+            mc_results = self.quant.monte_carlo_simulation(num_simulations=simulations, time_horizon=days)
             self.quant.plot_monte_carlo(mc_results, ticker)
             
             self.results_text.insert(tk.END, f"Monte Carlo simulation completed for {ticker}\n")
@@ -428,7 +442,7 @@ def main():
                            help='Start date (YYYY-MM-DD)')
         parser.add_argument('--end', type=str, default=config.END_DATE,
                            help='End date (YYYY-MM-DD)')
-        parser.add_argument('--analysis', type=str, choices=['basic', 'portfolio', 'montecarlo', 'all'],
+        parser.add_argument('--analysis', type=str, choices=['basic', 'portfolio', 'montecarlo', 'correlation', 'all'],
                            default='all', help='Type of analysis to perform')
         parser.add_argument('--export', type=str, help='Export results to file (CSV or Excel)')
         parser.add_argument('--simulations', type=int, default=1000, 

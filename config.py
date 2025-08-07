@@ -1,11 +1,12 @@
 # Configuration file for Quantitative Analysis
+from datetime import datetime, timedelta
 
 # Default tickers to analyze
 DEFAULT_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN']
 
-# Date range for analysis
-START_DATE = '2020-01-01'
-END_DATE = '2023-01-01'
+# Date range for analysis - automatically set to valid dates
+END_DATE = datetime.now().strftime('%Y-%m-%d')
+START_DATE = (datetime.now() - timedelta(days=365*2)).strftime('%Y-%m-%d')  # 2 years ago
 
 # Risk-free rate (annual)
 RISK_FREE_RATE = 0.03
